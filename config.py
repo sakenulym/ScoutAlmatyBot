@@ -1,54 +1,21 @@
--- ============================================================
--- Scout Bot — Oracle Database schema
--- Запускать в SQL Developer Web (Oracle Cloud Console)
--- ============================================================
+from dotenv import load_dotenv
+load_dotenv()
 
--- Скауты
-CREATE TABLE scouts (
-    user_id     NUMBER          NOT NULL,
-    username    VARCHAR2(100),
-    full_name   VARCHAR2(200),
-    created_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT  pk_scouts       PRIMARY KEY (user_id)
-);
+import os
 
--- Отчёты о перемещении самокатов
-CREATE TABLE reports (
-    id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    scout_id    NUMBER          NOT NULL,
-    msg_time    TIMESTAMP       NOT NULL,
-    raw_text    VARCHAR2(2000),
-    parking     VARCHAR2(300),
-    scooter_cnt NUMBER          DEFAULT 0,
-    CONSTRAINT  fk_rep_scout    FOREIGN KEY (scout_id) REFERENCES scouts (user_id)
-);
+# ─── Telegram ────────────────────────────────────────────────────────────────
+BOT_TOKEN        = os.getenv("BOT_TOKEN", "")
+SCOUT_GROUP_ID   = int(os.getenv("SCOUT_GROUP_ID", "0"))
+MANAGER_GROUP_ID = int(os.getenv("MANAGER_GROUP_ID", "0"))
 
--- Перерывы (обед / ужин)
-CREATE TABLE breaks (
-    id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    scout_id    NUMBER          NOT NULL,
-    break_type  VARCHAR2(20),   -- 'lunch' | 'dinner' | 'break'
-    start_time  TIMESTAMP       NOT NULL,
-    end_time    TIMESTAMP,
-    CONSTRAINT  fk_brk_scout    FOREIGN KEY (scout_id) REFERENCES scouts (user_id)
-);
+# ─── Oracle Database ─────────────────────────────────────────────────────────
+ORA_USER        = os.getenv("ORA_USER", "ADMIN")
+ORA_PASS        = os.getenv("ORA_PASS", "")
+ORA_DSN         = os.getenv("ORA_DSN", "")
+ORA_WALLET      = os.getenv("ORA_WALLET", "")
+ORA_WALLET_PASS = os.getenv("ORA_WALLET_PASS", "")
 
--- Простои (> IDLE_THRESHOLD_MIN, без учёта перерывов)
-CREATE TABLE idle_logs (
-    id          NUMBER          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    scout_id    NUMBER          NOT NULL,
-    idle_start  TIMESTAMP       NOT NULL,
-    idle_end    TIMESTAMP,
-    gap_minutes NUMBER,
-    CONSTRAINT  fk_idle_scout   FOREIGN KEY (scout_id) REFERENCES scouts (user_id)
-);
-
--- Индексы
-CREATE INDEX idx_reports_scout_time ON reports   (scout_id, msg_time);
-CREATE INDEX idx_breaks_scout_time  ON breaks    (scout_id, start_time);
-CREATE INDEX idx_idle_scout_time    ON idle_logs (scout_id, idle_start);
-
--- Проверка
-SELECT table_name FROM user_tables
-WHERE table_name IN ('SCOUTS','REPORTS','BREAKS','IDLE_LOGS')
-ORDER BY table_name;
+# ─── Логика ──────────────────────────────────────────────────────────────────
+IDLE_THRESHOLD_MIN = int(os.getenv("IDLE_THRESHOLD_MIN", "20"))
+DAILY_REPORT_TIME  = os.getenv("DAILY_REPORT_TIME", "21:00")
+TIMEZONE           = "Asia/Almaty"
