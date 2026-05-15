@@ -1,0 +1,120 @@
+# Scout Bot 🛴
+
+Telegram-бот для контроля скаутов самокатного сервиса. Парсит отчёты из группы, считает самокаты, фиксирует простои и отправляет сводки руководителям.
+
+## Возможности
+
+- Автоматический парсинг отчётов скаутов из Telegram-группы
+- Подсчёт самокатов за смену по каждому скауту
+- Определение простоев (>20 мин без отчёта, кроме обеда/ужина)
+- Учёт перерывов (обед, ужин) — скаут пишет слово в группу
+- Время смены: от первого до последнего отчёта
+- Алерты руководителям при простое
+- Авто-отчёт в конце дня по расписанию
+- Команды для ручного запроса отчётов
+
+## Стек
+
+- Python 3.10+
+- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) 21.x
+- [oracledb](https://oracle.github.io/python-oracledb/) — Oracle Database
+- APScheduler — авто-отчёты по расписанию
+- Oracle Cloud Always Free — база данных + VM (бесплатно навсегда)
+
+## Структура
+
+```
+scout_bot/
+├── bot.py              # точка входа
+├── config.py           # настройки из env
+├── db.py               # пул подключений к Oracle
+├── parser.py           # парсер отчётов и перерывов
+├── handlers.py         # обработчики Telegram-сообщений
+├── scheduler.py        # авто-отчёты по расписанию
+├── reports.py          # генерация текстовых отчётов
+├── requirements.txt
+├── .env.example        # шаблон переменных окружения
+├── scout_bot.service   # systemd-сервис для Oracle VM
+└── sql/
+    └── init.sql        # создание таблиц Oracle
+```
+
+## Быстрый старт
+
+### 1. Клонировать репозиторий
+
+```bash
+git clone https://github.com/YOUR_USERNAME/scout_bot.git
+cd scout_bot
+```
+
+### 2. Установить зависимости
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Настроить переменные окружения
+
+```bash
+cp .env.example .env
+nano .env   # заполнить все значения
+```
+
+### 4. Создать таблицы в Oracle
+
+Открыть **Oracle Cloud Console → Autonomous Database → SQL Developer Web**, вставить и выполнить содержимое `sql/init.sql`.
+
+### 5. Запустить бота
+
+```bash
+python bot.py
+```
+
+### 6. Запуск как системный сервис (на Oracle VM)
+
+```bash
+sudo cp scout_bot.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable scout_bot
+sudo systemctl start scout_bot
+sudo systemctl status scout_bot
+```
+
+## Формат отчёта скаута
+
+Бот распознаёт сообщения вида:
+
+```
+Парковка Алматы  S.290030, eVIN: 110108121475, Ninebot SL 90
+S.258246, eVIN: 110108072714, Ninebot SL 90
+Итого: 2
+```
+
+## Перерывы
+
+Скаут пишет в группу любое из слов: `обед`, `ужин`, `lunch`, `dinner`, `перерыв`. Бот исключает время перерыва из расчёта простоев. Возвращение: `вернулся`, `вернулась`, `продолжаю`, `работаю`.
+
+## Команды для руководителей
+
+| Команда | Описание |
+|---|---|
+| `/report @username` | Отчёт по скауту за сегодня |
+| `/all` | Сводка по всем скаутам |
+| `/idle` | Список простоев за сегодня |
+| `/help` | Список команд |
+
+## Oracle Cloud Free Tier
+
+Регистрация: [cloud.oracle.com](https://cloud.oracle.com). Always Free включает:
+- 1× Autonomous Database (20 GB)
+- 2× Compute VM (1 GB RAM каждая)
+- Бесплатно навсегда, карта нужна только для верификации
+
+## Что улучшить
+
+- Whitelist команд менеджера по `user_id`
+- Webhook вместо polling (nginx + SSL)
+- Партиционирование таблицы `reports` по дате
+- Unit-тесты парсера на реальных форматах сообщений
+- `/health` endpoint + алерт если бот упал
