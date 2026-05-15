@@ -8,9 +8,8 @@ MANAGER_GROUP_ID=-1003791947470
 # Oracle Database (Always Free)
 ORA_USER=ADMIN
 ORA_PASS=M17maulen!!!
-ORA_DSN=your-hostname:1521/FREEPDB1
-# Если используешь Wallet (TLS) — укажи путь к распакованной папке:
-# ORA_WALLET=/home/ubuntu/wallet
+ORA_DSN=adb.eu-frankfurt-1.oraclecloud.com:1522/g46bc5492503984_scoutdb_tp.adb.oraclecloud.com
+ORA_WALLET=/home/ubuntu/wallet
 
 # Логика
 IDLE_THRESHOLD_MIN=20
